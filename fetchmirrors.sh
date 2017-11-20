@@ -89,7 +89,7 @@ get_opts() {
 			;;
 			-l|--list) # Display a list of country codes to the user
 				echo "${Yellow}Country codes:${ColorOff}"
-				echo -e "$countries" | column -t
+				echo -e "${countries[@]}" | column -t
 				echo "${Yellow}Note: Use only the upercase two character code in your command ex:${Green} $this -c US"
 				echo "${Yellow}Or simply use:${Green} ${this}${ColorOff}"
 				break
@@ -103,7 +103,7 @@ get_opts() {
 				else
 					shift
 					for i in $(echo "$@") ; do
-						if (echo "$countries" | grep -w "$i" &> /dev/null); then
+						if (echo "${countries[@]}" | grep -w "$i" &> /dev/null); then
 							query+="https://www.archlinux.org/mirrorlist/?country=${i} "
 						else
 							echo "${Yellow}[${this}]${Red} Error: ${Yellow}country code: $2 not found."
@@ -132,7 +132,7 @@ search() {
 	while (true)
 	  do
 		echo "${Green}Country codes:${ColorOff}"
-		echo -e "$countries" | column -t
+		echo -e "${countries[@]}" | column -t
 		echo -n "${Yellow}Enter the number(s) or code(s) corresponding to your country ${Green}[4 9 US]${Yellow}:${ColorOff} "
 		read code
 			
@@ -149,13 +149,13 @@ search() {
 					break
 				;;
 				[0-9]|[1-4][0-9]|[5][0-1])	
-					country_code=$(<<<"$countries" grep -o "$i.*" | awk 'NR==1 {print $2}')
-					country+=$(<<<"$countries" grep -o "$i.*" | awk 'NR==1 {print $3" "}' | sed 's/\\n.*/ /')
+					country_code=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}')
+					country+=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $3" "}' | sed 's/\\n.*/ /')
 					query+="https://www.archlinux.org/mirrorlist/?country=${country_code} "
 				;;
 				[A-Z][A-Z])
-					if (<<<"$countries" grep -o "$i" &>/dev/null); then
-						country+=$(<<<"$countries" grep -o "$i.*" | awk 'NR==1 {print $2}' | sed 's/\\n.*/ /')
+					if (<<<"${countries[@]}" grep -o "$i" &>/dev/null); then
+						country+=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}' | sed 's/\\n.*/ /')
 						query+="https://www.archlinux.org/mirrorlist/?country=${i} "
 					else
 						echo "${Yellow}[${this}]${Red} Error: ${Yellow}invalid input [ $i ], select a number or code from the list.${ColorOff}"
