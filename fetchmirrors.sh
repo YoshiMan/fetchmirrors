@@ -298,9 +298,8 @@ get_list() {
 
 	sed -i 's/#//' /tmp/mirrorlist
 	echo "${Yellow}Please wait while ranking${Green} ${country[*]} ${Yellow}mirrors...${ColorOff}"
-	rankmirrors -n "$rank_int" /tmp/mirrorlist > /tmp/mirrorlist.ranked
 	
-	if [ "$?" -gt "0" ]; then
+	if ! rankmirrors -n "$rank_int" /tmp/mirrorlist > /tmp/mirrorlist.ranked  ; then
 		echo "${Yellow}[${this}]${Red} Error: ${Yellow}an error occured in ranking mirrorlist exiting..."
 		rm /tmp/{mirrorlist,mirrorlist.ranked} &> /dev/null
 		exit 1
