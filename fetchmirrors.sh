@@ -217,7 +217,7 @@ search() {
 		echo "${Green}Country codes:${ColorOff}"
 		echo -e "${countries[@]}" | column -t
 		echo -n "${Yellow}Enter the number(s) or code(s) corresponding to your country ${Green}[4 9 US]${Yellow}:${ColorOff} "
-		read -a code
+		read -ra code
 			
 		for i in "${code[@]}" ; do
 			case "$i" in
@@ -264,7 +264,7 @@ search() {
 
 	if "$confirm" ; then
 		echo -en "\n${Yellow}You have selected the countries:${Green} ${country[*]} ${Yellow}- is this correct ${Green}[Y/n]:${ColorOff} "
-		read input
+		read -r input
 		
 		case "$input" in
 			y|Y|yes|Yes|yY|Yy|yy|YY|"")
@@ -306,7 +306,7 @@ get_list() {
 		exit 1
 	elif "$confirm" ; then
 		echo -en "\n${Yellow}Would you like to view new mirrorlist? ${Green}[Y/n]: ${ColorOff}"
-		read input
+		read -r input
 
 		case "$input" in
 			y|Y|yes|Yes|yY|Yy|yy|YY|"")
@@ -315,7 +315,7 @@ get_list() {
 		esac
 
 		echo -en "\n${Yellow}Would you like to install the new mirrorlist backing up existing? ${Green}[Y/n]:${ColorOff} "
-		read input
+		read -r input
 	else
 		input=""
 	fi
