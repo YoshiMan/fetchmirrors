@@ -102,9 +102,9 @@ get_opts() {
 					echo "${Yellow}[${this}]${Red} Error: ${Yellow}You must enter a country code."
 				else
 					shift
-					for i in $(echo "$@") ; do
+					for i in "$@" ; do
 						if (echo "${countries[@]}" | grep -w "$i" &> /dev/null); then
-							query+="https://www.archlinux.org/mirrorlist/?country=${i} "
+							query+=("https://www.archlinux.org/mirrorlist/?country=${i}")
 						else
 							echo "${Yellow}[${this}]${Red} Error: ${Yellow}country code: $2 not found."
 							echo "To view a list of country codes run:${Green} $this -l${ColorOff}"
@@ -134,29 +134,29 @@ search() {
 		echo "${Green}Country codes:${ColorOff}"
 		echo -e "${countries[@]}" | column -t
 		echo -n "${Yellow}Enter the number(s) or code(s) corresponding to your country ${Green}[4 9 US]${Yellow}:${ColorOff} "
-		read code
+		read -a code
 			
-		for i in $(echo "$code") ; do
+		for i in "${code[@]}" ; do
 			case "$i" in
-				1)	# Set query to all mirrors
+				1|AM)	# Set query to all mirrors
 					country="All"
-					query="https://www.archlinux.org/mirrorlist/all/"
+					query=("https://www.archlinux.org/mirrorlist/all/")
 					break
 				;;
-				2)	# Set query to all https mirrors
+				2|AS)	# Set query to all https mirrors
 					country="All HTTPS"
-					query="https://www.archlinux.org/mirrorlist/all/https/"
+					query=("https://www.archlinux.org/mirrorlist/all/https/")
 					break
 				;;
 				[0-9]|[1-4][0-9]|[5][0-1])	
 					country_code=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}')
-					country+=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $3" "}' | sed 's/\\n.*/ /')
-					query+="https://www.archlinux.org/mirrorlist/?country=${country_code} "
+					country+=($(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $3" "}' | sed 's/\\n.*/ /'))
+					query+=("https://www.archlinux.org/mirrorlist/?country=${country_code}")
 				;;
-				[A-Z][A-Z])
+				[[:upper:]][[:upper:]])
 					if (<<<"${countries[@]}" grep -o "$i" &>/dev/null); then
-						country+=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}' | sed 's/\\n.*/ /')
-						query+="https://www.archlinux.org/mirrorlist/?country=${i} "
+						country+=($(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}' | sed 's/\\n.*/ /'))
+						query+=("https://www.archlinux.org/mirrorlist/?country=${i}")
 					else
 						echo "${Yellow}[${this}]${Red} Error: ${Yellow}invalid input [ $i ], select a number or code from the list.${ColorOff}"
 						err=true
@@ -180,7 +180,7 @@ search() {
 	done
 
 	if "$confirm" ; then
-		echo -en "\n${Yellow}You have selected the countries:${Green} $country${Yellow}- is this correct ${Green}[Y/n]:${ColorOff} "
+		echo -en "\n${Yellow}You have selected the countries:${Green} ${country[*]} ${Yellow}- is this correct ${Green}[Y/n]:${ColorOff} "
 		read input
 		
 		case "$input" in
@@ -200,7 +200,7 @@ search() {
 get_list() {
 
 	echo
-	for list in $(echo "$query") ; do
+	for list in "${query[@]}" ; do
 		if (curl -s "$list" | grep "Server" &>/dev/null); then
 			echo "${Yellow}Fetching new mirrorlist from:${Green} ${list}${ColorOff}"
 			curl -s "$list" | sed '1,4d' >> /tmp/mirrorlist
@@ -214,7 +214,7 @@ get_list() {
 	done
 
 	sed -i 's/#//' /tmp/mirrorlist
-	echo "${Yellow}Please wait while ranking${Green} $country${Yellow}mirrors...${ColorOff}"
+	echo "${Yellow}Please wait while ranking${Green} ${country[*]} ${Yellow}mirrors...${ColorOff}"
 	rankmirrors -n "$rank_int" /tmp/mirrorlist > /tmp/mirrorlist.ranked
 	
 	if [ "$?" -gt "0" ]; then
