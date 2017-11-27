@@ -35,15 +35,24 @@ usage() {
 	echo "${Yellow}   Number of servers to rank (default  6)"
 	echo "${Green}   -v --verbose"
 	echo "${Yellow}   Verbose output"
+	echo "${Green}   -p --protocol"
+	echo "${Yellow}   the protocol to use either http or https, default is empty (both)"
+	echo "${Green}   -i --ip-version"
+	echo "${Yellow}   the ip version to use either 4 or 6, default is empty (both)"
+	echo "${Green}   -u --use-mirror-status"
+	echo "${Yellow}   use mirror status"
 	echo
 	echo "${Yellow} Use${Green} $this ${Yellow}without any option to prompt for country code(s)${ColorOff}"
 }
 
 get_opts() {
 		
-	this=${0##*/} # Set 'this', 'rank_int', 'confirm', 'countries', and color variables
+	this=${0##*/} # Set 'this', 'rank_int', 'confirm', 'countries', 'protocol', 'ip_version', 'use_mirror_status' and color variables
 	rank_int="6"
 	confirm=true
+	protocol=()
+	ip_version=()
+	use_mirror_status=""
 	err=false
 	Green=$'\e[0;32m';
 	Yellow=$'\e[0;33m';
@@ -198,6 +207,29 @@ get_opts() {
 				fi
 				break
 			;;
+			-p|--protocol) # Set protocol eg. http or https
+				if [ "$2" != "https" ] && [ "$2" != "http" ] ; then
+					echo "${Yellow}[${this}]${Red} Error: ${Yellow} invalid protocol use https or http or both ${ColorOff}"
+					exit 1
+				fi
+				protocol+=("$2");
+				# remove duplicates, in case of "-p https -p https --protocol https"
+				protocol=($(echo "${protocol[@]}" | tr ' ' '\n' | sort -u))
+				shift ; shift ;
+			;;
+			-i|--ip-version) # Set ip version eg. 4 or 6
+				if [ "$2" -ne "4" ] && [ "$2" -ne "6" ] ; then
+					echo "${Yellow}[${this}]${Red} Error: ${Yellow} invalid ip_version use 4 or 6 or both ${ColorOff}"
+					exit 1
+				fi
+				ip_version+=("$2");
+				# remove duplicates, in case of "-i 4 -i 4 --ip-version 4"
+				ip_version=($(echo "${ip_version[@]}" | tr ' ' '\n' | sort -u))
+				shift ; shift ;
+			;;
+			-u|--use-mirror-status) # use mirror status
+				use_mirror_status="&use_mirror_status=on" ; shift
+			;;
 			"") # Empty 1 parameter means search for country code
 				search ; break
 			;;
@@ -211,7 +243,18 @@ get_opts() {
 }
 
 search() {
-	
+	# build query string for protocol
+	protocolQueryString="";					
+	for p in "${protocol[@]}";
+	do
+		protocolQueryString+="&protocol=$p";
+	done
+	# build query string for ip_version
+	ip_versionQueryString="";					
+	for i in "${ip_version[@]}"	;
+	do
+		ip_versionQueryString+="&ip_version=$i";
+	done
 	while (true)
 	  do
 		echo "${Green}Country codes:${ColorOff}"
@@ -234,12 +277,12 @@ search() {
 				[0-9]|[1-4][0-9]|[5][0-1])	
 					country_code=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}')
 					country+=($(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $3" "}' | sed 's/\\n.*/ /'))
-					query+=("https://www.archlinux.org/mirrorlist/?country=${country_code}")
+					query+=("https://www.archlinux.org/mirrorlist/?country=${country_code}${protocolQueryString}${ip_versionQueryString}${use_mirror_status}")
 				;;
 				[[:upper:]][[:upper:]])
 					if (<<<"${countries[@]}" grep -o "$i" &>/dev/null); then
 						country+=($(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}' | sed 's/\\n.*/ /'))
-						query+=("https://www.archlinux.org/mirrorlist/?country=${i}")
+						query+=("https://www.archlinux.org/mirrorlist/?country=${i}${protocolQueryString}${ip_versionQueryString}${use_mirror_status}")
 					else
 						echo "${Yellow}[${this}]${Red} Error: ${Yellow}invalid input [ $i ], select a number or code from the list.${ColorOff}"
 						err=true
