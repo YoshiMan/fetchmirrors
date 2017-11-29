@@ -243,18 +243,6 @@ get_opts() {
 }
 
 search() {
-	# build query string for protocol
-	protocolQueryString="";					
-	for p in "${protocol[@]}";
-	do
-		protocolQueryString+="&protocol=$p";
-	done
-	# build query string for ip_version
-	ip_versionQueryString="";					
-	for i in "${ip_version[@]}"	;
-	do
-		ip_versionQueryString+="&ip_version=$i";
-	done
 	while (true)
 	  do
 		echo "${Green}Country codes:${ColorOff}"
@@ -277,12 +265,12 @@ search() {
 				[0-9]|[1-4][0-9]|[5][0-1])	
 					country_code=$(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}')
 					country+=($(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $3" "}' | sed 's/\\n.*/ /'))
-					query+=("https://www.archlinux.org/mirrorlist/?country=${country_code}${protocolQueryString}${ip_versionQueryString}${use_mirror_status}")
+					query+=("https://www.archlinux.org/mirrorlist/?country=${country_code}")
 				;;
 				[[:upper:]][[:upper:]])
 					if (<<<"${countries[@]}" grep -o "$i" &>/dev/null); then
 						country+=($(<<<"${countries[@]}" grep -o "$i.*" | awk 'NR==1 {print $2}' | sed 's/\\n.*/ /'))
-						query+=("https://www.archlinux.org/mirrorlist/?country=${i}${protocolQueryString}${ip_versionQueryString}${use_mirror_status}")
+						query+=("https://www.archlinux.org/mirrorlist/?country=${i}")
 					else
 						echo "${Yellow}[${this}]${Red} Error: ${Yellow}invalid input [ $i ], select a number or code from the list.${ColorOff}"
 						err=true
@@ -325,8 +313,21 @@ search() {
 
 get_list() {
 
+	# build query string for protocol
+	protocolQueryString="";					
+	for p in "${protocol[@]}";
+	do
+		protocolQueryString+="&protocol=$p";
+	done
+	# build query string for ip_version
+	ip_versionQueryString="";					
+	for i in "${ip_version[@]}"	;
+	do
+		ip_versionQueryString+="&ip_version=$i";
+	done
 	echo
 	for list in "${query[@]}" ; do
+		list+=${protocolQueryString}${ip_versionQueryString}${use_mirror_status}
 		if (curl -s "$list" | grep "Server" &>/dev/null); then
 			echo "${Yellow}Fetching new mirrorlist from:${Green} ${list}${ColorOff}"
 			curl -s "$list" | sed '1,4d' >> /tmp/mirrorlist
